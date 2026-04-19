@@ -1,9 +1,13 @@
 import requests
-from constant import USER_TOKEN, BROKER_TO_COPY
+from constant.app_constant import USER_TOKEN, BROKER_TO_COPY
 from collections import Counter
+from datetime import datetime, timedelta
+from ollama_model import get_analysis
+from constant.app_constant import LIST_EXPECTED_SIMILAR_STOCKS_RESPONSE
 
-def get_buy_sell_broker(broker: str):
-    url = f"https://exodus.stockbit.com/order-trade/broker/activity?broker_code={broker}&limit=50&page=1&from=2026-04-15&to=2026-04-15&transaction_type=TRANSACTION_TYPE_NET&market_board=MARKET_TYPE_REGULER&investor_type=INVESTOR_TYPE_ALL"
+def get_buy_sell_broker(broker: str, current_date):
+    last_two_weeks = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%d")
+    url = f"https://exodus.stockbit.com/order-trade/broker/activity?broker_code={broker}&limit=25&page=1&from={last_two_weeks}&to={current_date}&transaction_type=TRANSACTION_TYPE_NET&market_board=MARKET_TYPE_REGULER&investor_type=INVESTOR_TYPE_ALL"
 
     payload = {}
     headers = {
@@ -17,34 +21,21 @@ def get_buy_sell_broker(broker: str):
     }
 
     response = requests.request("GET", url, headers=headers, data=payload).json()
-    buy_stocks = [item['stock_code'] for item in response['data']['broker_activity_transaction']['brokers_buy']]
+    buy_stocks = []
+    for item in response['data']['broker_activity_transaction']['brokers_buy']:
+        stock_detail = {'stock_code': item['stock_code'], 'broker_code': item['broker_code'], 'lot': item['lot'], "avg_price": item['avg_price']}
+        buy_stocks.append(stock_detail)
     return buy_stocks
 
-all_list = []
-for broker in BROKER_TO_COPY:
-    all_list.append(get_buy_sell_broker(broker=broker))
+def main():
+    all_list = []
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    for broker in BROKER_TO_COPY:
+        all_list.append(get_buy_sell_broker(broker=broker, current_date=current_date))
+    response_analysis = get_analysis(request_message=f'Please analyze this list of broker buying activity from this data {all_list} and make a summary to list of stock_code that appear at least on 3 different broker_code and then provide in this json format {LIST_EXPECTED_SIMILAR_STOCKS_RESPONSE}')
+    if response_analysis is not None:
+        similar_stock = response_analysis['data']['detail']
+        print(similar_stock)
 
-stock_count = Counter()
-for lst in all_list:
-    for stock in set(lst):  # set() ensures each stock counted only once per list
-        stock_count[stock] += 1
-
-# Filter stocks that appear in at least 3 lists
-min_lists = 3
-common_stocks = [(stock, count) for stock, count in stock_count.items() if count >= min_lists]
-
-# Sort by count (descending), then by stock code (ascending)
-common_stocks = sorted(common_stocks, key=lambda x: (-x[1], x[0]))
-
-# Display results
-print("=" * 60)
-print(f"📊 STOCK CODES APPEARING IN AT LEAST {min_lists} LISTS")
-print("=" * 60)
-print(f"{'#':<3} {'Stock Code':<10} {'Appearances':<12}")
-print("-" * 60)
-for i, (stock, count) in enumerate(common_stocks, 1):
-    print(f"{i:<3} {stock:<10} {count}/5 lists")
-
-print("-" * 60)
-print(f"✅ Total: {len(common_stocks)} stock(s)")
-print("=" * 60)
+if __name__ == "__main__":
+    main()
