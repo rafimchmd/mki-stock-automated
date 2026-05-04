@@ -1,5 +1,4 @@
 from helper.core import get_top_loser, get_keystats
-from valuation import main
 
 def get_filtered_top_loser(min_price: int = 500):
     """
@@ -44,4 +43,4 @@ for stock in top_loser_filtered:
 
 for loser in selected_stocks:
     print(f"  {loser['code']} - {loser['name']} - Change: {loser['change']}% - Price: {loser['price']}")
-    main(loser['code'])
+    # main(loser['code'])

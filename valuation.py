@@ -8,7 +8,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from helper.core import get_keystats, get_keystats_data, get_history_data
 from datetime import datetime
 
-STOCK_CODE = "CUAN"
+STOCK_CODE = "PBSA"
 
 keystats = get_keystats(f"{STOCK_CODE}")
 
@@ -254,9 +254,7 @@ def generate_pdf(analysis: dict, stock_code: str):
     print(f"PDF saved: {filename}")
     return filename
 
-def main(stock_code: str):
-    global STOCK_CODE
-    STOCK_CODE = stock_code
+def main():
     history_data = get_history_data(STOCK_CODE)
     analysis = get_analysis(f'''You are professional money manager that analyze stock to invest, 
                             You are always success to analyze is it stock good or bad based on its financial report.
@@ -269,3 +267,5 @@ def main(stock_code: str):
     print(analysis)
     if analysis:
         generate_pdf(analysis, STOCK_CODE)
+
+main()
