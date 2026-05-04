@@ -1,7 +1,7 @@
 from ollama import Client, web_fetch, web_search
 import json
 from datetime import datetime
-from constant.app_constant import OLLAMA_KEY, LIST_EXPECTED_SIMILAR_STOCKS_RESPONSE
+from constant.app_constant import OLLAMA_KEY
 
 def get_analysis(request_message: str):
 
